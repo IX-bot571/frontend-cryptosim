@@ -14,5 +14,6 @@ export class App {
     { ruta: '/seguimiento', texto: 'Seguimiento' },
     { ruta: '/alertas', texto: 'Mis alertas' },
     { ruta: '/notificaciones', texto: 'Notificaciones' },
+    { ruta: '/admin', texto: 'Admin Kafka' },
   ];
 }

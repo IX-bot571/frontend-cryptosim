@@ -52,3 +52,47 @@ export interface AlertaRequest {
   porcentaje?: number;
   ventanaMinutos?: number;
 }
+
+// --- ms-admin-kafka (8085) ---
+
+export interface TopicResumen {
+  nombre: string;
+  particiones: number;
+  replicas: number;
+  /** Solo las configs definidas en el propio tópico (retention.ms, cleanup.policy, min.insync.replicas…). */
+  configs: Record<string, string>;
+}
+
+export interface ParticionInfo {
+  particion: number;
+  lider: number | null;
+  replicas: number[];
+  isr: number[];
+}
+
+export interface TopicDetalle extends TopicResumen {
+  detalleParticiones: ParticionInfo[];
+}
+
+export interface CrearTopicRequest {
+  name: string;
+  particiones: number;
+  replicas: number;
+  configs: Record<string, string>;
+}
+
+export interface GrupoResumen {
+  groupId: string;
+  estado: string;
+  tipo: string;
+}
+
+export interface GrupoDetalle {
+  groupId: string;
+  estado: string;
+  coordinador: string;
+  miembros: { consumerId: string; clientId: string; host: string; particiones: string[] }[];
+  /** comprometido y lag son null si el grupo aún no confirmó offsets en esa partición. */
+  offsets: { topico: string; particion: number; comprometido: number | null; finLog: number; lag: number | null }[];
+  lagTotal: number;
+}

@@ -1,0 +1,166 @@
+<section class="pagina">
+  <header class="pagina-cabecera">
+    <h1>Admin Kafka</h1>
+    <p class="sutil">Tópicos y consumer groups del clúster, vía ms-admin-kafka</p>
+  </header>
+
+  @if (error(); as e) { <div class="aviso error">{{ e }}</div> }
+  @if (exito(); as m) { <div class="aviso ok">{{ m }}</div> }
+
+  <!-- Tópicos -->
+  <div class="dos-columnas">
+    <form class="tarjeta formulario" [formGroup]="crearForm" (ngSubmit)="crear()">
+      <h2>Nuevo tópico</h2>
+      <label>Nombre
+        <input formControlName="name" placeholder="ej. pruebas.demo" />
+      </label>
+      @if (crearForm.controls.name.touched && crearForm.controls.name.invalid) {
+        <span class="texto-negativo pequeño">Solo letras, números, '.', '_' y '-'.</span>
+      }
+      <div class="fila-campos">
+        <label>Particiones <input type="number" formControlName="particiones" min="1" /></label>
+        <label>Réplicas <input type="number" formControlName="replicas" min="1" max="3" /></label>
+      </div>
+      <label>Retención (horas) <input type="number" formControlName="retencionHoras" min="1" /></label>
+      <p class="sutil pequeño">Hay 3 brokers: el factor de replicación máximo es 3. Con RF ≥ 2 se usa min.insync.replicas = 2.</p>
+      <button class="btn btn-primario" type="submit" [disabled]="ocupado()">Crear tópico</button>
+    </form>
+
+    <div class="tarjeta tabla-contenedor">
+      <div class="lista-cabecera relleno">
+        <h2>Tópicos</h2>
+        <span class="sutil pequeño">clic en una fila para ver el detalle</span>
+      </div>
+      @if (topicos() === null) {
+        <p class="sutil relleno">Cargando…</p>
+      } @else {
+        <table class="tabla">
+          <thead>
+            <tr><th>Nombre</th><th class="num">Part.</th><th class="num">RF</th><th>Retención</th><th>Cleanup</th><th class="num">min.insync</th></tr>
+          </thead>
+          <tbody>
+            @for (t of topicos(); track t.nombre) {
+              <tr class="seleccionable" [class.elegida]="topicoSel() === t.nombre" (click)="elegirTopico(t.nombre)">
+                <td><span class="simbolo">{{ t.nombre }}</span></td>
+                <td class="num">{{ t.particiones }}</td>
+                <td class="num">{{ t.replicas }}</td>
+                <td>{{ retencionLegible(t.configs['retention.ms']) }}</td>
+                <td>{{ t.configs['cleanup.policy'] ?? 'por defecto' }}</td>
+                <td class="num">{{ t.configs['min.insync.replicas'] ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+
+  @if (detalleTopico(); as d) {
+    <div class="tarjeta detalle">
+      <div class="lista-cabecera">
+        <h2>{{ d.nombre }}</h2>
+        @if (subReplicadas() > 0) {
+          <span class="chip negativo">{{ subReplicadas() }} partición(es) con ISR incompleto</span>
+        } @else {
+          <span class="chip positivo">todas las réplicas en sincronía</span>
+        }
+      </div>
+      <div class="dos-columnas">
+        <div class="formulario">
+          <label>Retención (horas)
+            <div class="en-linea">
+              <input type="number" [formControl]="retencionForm" min="1" />
+              <button class="btn" type="button" [disabled]="ocupado()" (click)="cambiarRetencion(d)">Guardar</button>
+            </div>
+          </label>
+          <label>Particiones (solo aumentar)
+            <div class="en-linea">
+              <input type="number" [formControl]="particionesForm" [min]="d.particiones + 1" />
+              <button class="btn" type="button" [disabled]="ocupado()" (click)="aumentarParticiones(d)">Aumentar</button>
+            </div>
+          </label>
+          <button class="btn btn-peligro" type="button" [disabled]="ocupado()" (click)="eliminar(d)">Eliminar tópico</button>
+          @if (d.configs | keyvalue; as cfg) {
+            <dl class="configs">
+              @for (c of cfg; track c.key) { <dt>{{ c.key }}</dt><dd>{{ c.value }}</dd> }
+            </dl>
+          }
+        </div>
+        <table class="tabla">
+          <thead><tr><th class="num">Partición</th><th class="num">Líder</th><th>Réplicas</th><th>ISR</th></tr></thead>
+          <tbody>
+            @for (p of d.detalleParticiones; track p.particion) {
+              <tr>
+                <td class="num">{{ p.particion }}</td>
+                <td class="num">{{ p.lider ?? 'sin líder' }}</td>
+                <td>{{ p.replicas.join(', ') }}</td>
+                <td [class.texto-negativo]="p.isr.length < p.replicas.length">{{ p.isr.join(', ') }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Consumer groups -->
+  <div class="dos-columnas">
+    <div class="tarjeta">
+      <h2>Consumer groups</h2>
+      @if (grupos() === null) {
+        <p class="sutil">Cargando…</p>
+      } @else if (grupos()!.length === 0) {
+        <p class="sutil">No hay grupos.</p>
+      } @else {
+        <ul class="lista">
+          @for (g of grupos(); track g.groupId) {
+            <li class="fila seleccionable" [class.elegida]="grupoSel() === g.groupId" (click)="elegirGrupo(g.groupId)">
+              <span class="simbolo">{{ g.groupId }}</span>
+              <span class="estado" [class.estado-activa]="g.estado === 'STABLE'" [class.estado-cancelada]="g.estado !== 'STABLE'">{{ g.estado }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="tarjeta">
+      @if (detalleGrupo(); as g) {
+        <div class="lista-cabecera">
+          <h2>{{ g.groupId }}</h2>
+          <span class="chip" [class.positivo]="g.lagTotal === 0" [class.negativo]="g.lagTotal > 0">lag total {{ g.lagTotal }}</span>
+        </div>
+        <p class="sutil pequeño">Estado {{ g.estado }} · coordinador {{ g.coordinador }} · se actualiza cada 5 s</p>
+        <h3>Miembros ({{ g.miembros.length }})</h3>
+        @if (g.miembros.length === 0) {
+          <p class="sutil">Sin consumidores conectados.</p>
+        } @else {
+          <ul class="lista">
+            @for (m of g.miembros; track m.consumerId) {
+              <li class="fila">
+                <div class="fila-principal"><strong>{{ m.clientId }}</strong><span class="sutil pequeño">{{ m.host }}</span></div>
+                <span class="pequeño">{{ m.particiones.join(', ') || 'sin particiones' }}</span>
+              </li>
+            }
+          </ul>
+        }
+        <h3>Offsets por partición</h3>
+        <table class="tabla">
+          <thead><tr><th>Tópico</th><th class="num">Part.</th><th class="num">Confirmado</th><th class="num">Fin del log</th><th class="num">Lag</th></tr></thead>
+          <tbody>
+            @for (o of g.offsets; track o.topico + o.particion) {
+              <tr>
+                <td>{{ o.topico }}</td>
+                <td class="num">{{ o.particion }}</td>
+                <td class="num">{{ o.comprometido ?? '—' }}</td>
+                <td class="num">{{ o.finLog }}</td>
+                <td class="num" [class.texto-negativo]="(o.lag ?? 0) > 0">{{ o.lag ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="sutil">Elige un grupo para ver sus miembros, offsets y lag.</p>
+      }
+    </div>
+  </div>
+</section>

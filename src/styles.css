@@ -178,3 +178,16 @@ input:focus, select:focus, .btn:focus-visible { outline: 2px solid var(--primari
   .contenido { padding: var(--esp-4); }
   .fila { grid-template-columns: 1fr auto; }
 }
+
+/* Admin Kafka */
+.relleno { padding: var(--esp-4) var(--esp-4) 0; }
+.seleccionable { cursor: pointer; }
+.seleccionable:hover { background: var(--superficie-2); }
+.elegida { background: var(--superficie-2); box-shadow: inset 3px 0 0 var(--primario); }
+.en-linea { display: flex; gap: var(--esp-2); }
+.en-linea input { flex: 1; min-width: 0; }
+.detalle h2 { font-family: var(--mono); }
+.configs { display: grid; grid-template-columns: auto 1fr; gap: var(--esp-1) var(--esp-3); margin: 0; font-size: 0.8rem; }
+.configs dt { color: var(--texto-sutil); }
+.configs dd { margin: 0; font-family: var(--mono); }
+h3 { font-size: 0.9rem; margin: var(--esp-4) 0 var(--esp-2); color: var(--texto-sutil); }

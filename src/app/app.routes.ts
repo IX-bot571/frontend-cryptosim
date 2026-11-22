@@ -7,5 +7,6 @@ export const routes: Routes = [
   { path: 'seguimiento', title: 'Seguimiento · CryptoSim', loadComponent: () => import('./pages/seguimiento/seguimiento').then((m) => m.Seguimiento) },
   { path: 'alertas', title: 'Mis alertas · CryptoSim', loadComponent: () => import('./pages/alertas/alertas').then((m) => m.Alertas) },
   { path: 'notificaciones', title: 'Notificaciones · CryptoSim', loadComponent: () => import('./pages/notificaciones/notificaciones').then((m) => m.Notificaciones) },
+  { path: 'admin', title: 'Admin Kafka · CryptoSim', loadComponent: () => import('./pages/admin/admin').then((m) => m.Admin) },
   { path: '**', redirectTo: 'mercado' },
 ];
