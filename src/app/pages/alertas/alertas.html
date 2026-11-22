@@ -1,7 +1,7 @@
 <section class="pagina">
   <header class="pagina-cabecera">
     <h1>Mis alertas</h1>
-    <p class="sutil">Se disparan una sola vez, cuando el precio cruza el valor</p>
+    <p class="sutil">Se disparan una sola vez: al cruzar un precio o al moverse un % dentro de una ventana de tiempo</p>
   </header>
 
   @if (error(); as e) { <div class="aviso error">{{ e }}</div> }
@@ -21,19 +21,43 @@
         <select formControlName="tipo">
           <option value="PRECIO_MAYOR_IGUAL">El precio sube a (≥)</option>
           <option value="PRECIO_MENOR_IGUAL">El precio baja a (≤)</option>
+          <option value="VARIACION_VENTANA">Variación % en una ventana de tiempo</option>
         </select>
       </label>
-      <label>Valor (US$)
-        <input type="number" formControlName="valor" step="any" min="0" placeholder="Ej. 100000" />
-      </label>
-      @if (form.controls.valor.touched && form.controls.valor.invalid) {
-        <span class="texto-negativo pequeño">Ingresa un valor mayor que 0.</span>
-      }
-      @if (precioActual(); as p) {
-        <p class="sutil pequeño">
-          Precio actual: US$ {{ p.precio | precio }}
-          <button type="button" class="btn-enlace" (click)="usarPrecioActual()">usar</button>
-        </p>
+      @if (esVariacion()) {
+        <label>Dirección
+          <select formControlName="direccion">
+            <option value="SUBE">Sube</option>
+            <option value="BAJA">Baja</option>
+            <option value="AMBAS">Sube o baja</option>
+          </select>
+        </label>
+        <div class="fila-campos">
+          <label>Porcentaje (%)
+            <input type="number" formControlName="porcentaje" step="any" min="0" placeholder="Ej. 1" />
+          </label>
+          <label>Ventana (min)
+            <input type="number" formControlName="ventanaMinutos" step="1" min="1" max="1440" placeholder="Ej. 120" />
+          </label>
+        </div>
+        @if ((form.controls.porcentaje.touched && form.controls.porcentaje.invalid)
+             || (form.controls.ventanaMinutos.touched && form.controls.ventanaMinutos.invalid)) {
+          <span class="texto-negativo pequeño">Porcentaje mayor que 0 y ventana entre 1 y 1440 minutos.</span>
+        }
+        <p class="sutil pequeño">Compara el precio actual con el de hace esa cantidad de minutos.</p>
+      } @else {
+        <label>Valor (US$)
+          <input type="number" formControlName="valor" step="any" min="0" placeholder="Ej. 100000" />
+        </label>
+        @if (form.controls.valor.touched && form.controls.valor.invalid) {
+          <span class="texto-negativo pequeño">Ingresa un valor mayor que 0.</span>
+        }
+        @if (precioActual(); as p) {
+          <p class="sutil pequeño">
+            Precio actual: US$ {{ p.precio | precio }}
+            <button type="button" class="btn-enlace" (click)="usarPrecioActual()">usar</button>
+          </p>
+        }
       }
       <p class="resumen">{{ resumen() }}</p>
       <button class="btn btn-primario" type="submit" [disabled]="enviando()">
@@ -61,7 +85,7 @@
           @for (a of visibles(); track a.id) {
             <li class="fila">
               <div class="fila-principal">
-                <strong>{{ condicion(a.simbolo, a.tipo, a.valor) }}</strong>
+                <strong>{{ condicion(a) }}</strong>
                 <span class="sutil pequeño">
                   Creada {{ a.creadaEn | date: 'dd/MM HH:mm' }}
                   @if (a.estado === 'DISPARADA') { · disparó a US$ {{ a.precioDisparo | precio }} el {{ a.disparadaEn | date: 'dd/MM HH:mm:ss' }} }

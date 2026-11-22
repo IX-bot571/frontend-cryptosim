@@ -5,7 +5,7 @@ import { DatePipe } from '@angular/common';
 import { catchError, EMPTY, switchMap, timer } from 'rxjs';
 import { AlertasService } from '../../core/alertas.service';
 import { mensajeError } from '../../core/errores';
-import { Alerta, Cripto, EstadoAlerta, Precio, TipoAlerta } from '../../core/models';
+import { Alerta, AlertaRequest, Cripto, Direccion, EstadoAlerta, Precio, TipoAlerta } from '../../core/models';
 import { PreciosService } from '../../core/precios.service';
 import { condicion } from '../../shared/formato';
 import { PrecioPipe } from '../../shared/formato.pipes';
@@ -25,8 +25,15 @@ export class Alertas {
     simbolo: ['BTC', Validators.required],
     tipo: ['PRECIO_MAYOR_IGUAL' as TipoAlerta, Validators.required],
     valor: [null as number | null, [Validators.required, Validators.min(0.00000001)]],
+    direccion: [{ value: 'SUBE' as Direccion, disabled: true }, Validators.required],
+    porcentaje: [{ value: null as number | null, disabled: true }, [Validators.required, Validators.min(0.0001)]],
+    ventanaMinutos: [
+      { value: 120 as number | null, disabled: true },
+      [Validators.required, Validators.min(1), Validators.max(1440)],
+    ],
   });
   private readonly valores = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  protected readonly esVariacion = computed(() => this.valores().tipo === 'VARIACION_VENTANA');
 
   protected readonly catalogo = signal<Cripto[]>([]);
   protected readonly precios = signal<Record<string, Precio>>({});
@@ -40,11 +47,11 @@ export class Alertas {
   protected readonly condicion = condicion;
 
   protected readonly resumen = computed(() => {
-    const v = this.valores();
-    if (!v.simbolo || !v.tipo || v.valor == null || !(v.valor > 0)) {
+    this.valores(); // dependencia: se recalcula con cada cambio del formulario
+    if (this.form.invalid) {
       return 'Completa el formulario para ver el resumen.';
     }
-    return `Avísame si ${condicion(v.simbolo, v.tipo, v.valor)}`;
+    return `Avísame si ${condicion(this.solicitud())}`;
   });
 
   protected readonly precioActual = computed(() => this.precios()[this.valores().simbolo ?? '']);
@@ -56,6 +63,13 @@ export class Alertas {
   });
 
   constructor() {
+    // Solo se validan (y se envían) los campos del tipo elegido: los demás quedan deshabilitados.
+    this.form.controls.tipo.valueChanges.pipe(takeUntilDestroyed()).subscribe((tipo) => {
+      const variacion = tipo === 'VARIACION_VENTANA';
+      const { valor, direccion, porcentaje, ventanaMinutos } = this.form.controls;
+      [direccion, porcentaje, ventanaMinutos].forEach((c) => (variacion ? c.enable() : c.disable()));
+      variacion ? valor.disable() : valor.enable();
+    });
     this.preciosApi.catalogo().subscribe({ next: (c) => this.catalogo.set(c), error: () => {} });
     // Lista y precios se refrescan cada 10 s para ver cuándo una alerta pasa a DISPARADA.
     timer(0, 10000)
@@ -77,15 +91,15 @@ export class Alertas {
       this.form.markAllAsTouched();
       return;
     }
-    const { simbolo, tipo, valor } = this.form.getRawValue();
     this.enviando.set(true);
     this.error.set(null);
     this.exito.set(null);
-    this.alertasApi.crear({ simbolo, tipo, valor: valor! }).subscribe({
+    this.alertasApi.crear(this.solicitud()).subscribe({
       next: (a) => {
         this.alertas.update((lista) => [a, ...(lista ?? [])]);
-        this.exito.set(`Alerta creada: ${condicion(a.simbolo, a.tipo, a.valor)}`);
+        this.exito.set(`Alerta creada: ${condicion(a)}`);
         this.form.controls.valor.reset(null);
+        this.form.controls.porcentaje.reset(null);
         this.enviando.set(false);
       },
       error: (e) => {
@@ -110,6 +124,19 @@ export class Alertas {
     if (p) {
       this.form.controls.valor.setValue(p.precio);
     }
+  }
+
+  /** form.value excluye los controles deshabilitados: solo viaja lo que corresponde al tipo. */
+  private solicitud(): AlertaRequest {
+    const v = this.form.value;
+    return {
+      simbolo: v.simbolo!,
+      tipo: v.tipo!,
+      valor: v.valor ?? undefined,
+      direccion: v.direccion,
+      porcentaje: v.porcentaje ?? undefined,
+      ventanaMinutos: v.ventanaMinutos ?? undefined,
+    };
   }
 
   private fallo(e: unknown) {

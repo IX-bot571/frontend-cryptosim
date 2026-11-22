@@ -1,4 +1,4 @@
-import { TipoAlerta } from '../core/models';
+import { CondicionAlerta, TipoAlerta } from '../core/models';
 
 const formatos = new Map<string, Intl.NumberFormat>();
 
@@ -41,7 +41,13 @@ export function operador(tipo: TipoAlerta): string {
   return tipo === 'PRECIO_MAYOR_IGUAL' ? '≥' : '≤';
 }
 
-/** "BTC ≥ 100.000" */
-export function condicion(simbolo: string, tipo: TipoAlerta, valor: number): string {
-  return `${simbolo} ${operador(tipo)} ${formatoPrecio(valor)}`;
+const VERBO = { SUBE: 'sube', BAJA: 'baja', AMBAS: 'se mueve ±' } as const;
+
+/** "BTC ≥ 100.000" o "BTC sube 1 % en 120 min" */
+export function condicion(a: CondicionAlerta): string {
+  if (a.tipo === 'VARIACION_VENTANA') {
+    const verbo = a.direccion ? VERBO[a.direccion] : '?';
+    return `${a.simbolo} ${verbo} ${formato(0, 4).format(a.porcentaje ?? 0)} % en ${a.ventanaMinutos ?? '?'} min`;
+  }
+  return `${a.simbolo} ${operador(a.tipo)} ${formatoPrecio(a.valor)}`;
 }

@@ -21,22 +21,34 @@ export interface PuntoHistorial {
   precio: number;
 }
 
-export type TipoAlerta = 'PRECIO_MAYOR_IGUAL' | 'PRECIO_MENOR_IGUAL';
+export type TipoAlerta = 'PRECIO_MAYOR_IGUAL' | 'PRECIO_MENOR_IGUAL' | 'VARIACION_VENTANA';
+export type Direccion = 'SUBE' | 'BAJA' | 'AMBAS';
 export type EstadoAlerta = 'ACTIVA' | 'DISPARADA' | 'CANCELADA';
 
 export interface Alerta {
   id: number;
   simbolo: string;
   tipo: TipoAlerta;
-  valor: number;
+  /** Precio objetivo; null en VARIACION_VENTANA. */
+  valor: number | null;
   estado: EstadoAlerta;
   creadaEn: string;
   disparadaEn: string | null;
   precioDisparo: number | null;
+  direccion: Direccion | null;
+  porcentaje: number | null;
+  ventanaMinutos: number | null;
 }
+
+/** Lo mínimo para describir una alerta en texto (sirve para la alerta guardada y para el formulario). */
+export type CondicionAlerta = Pick<Alerta, 'simbolo' | 'tipo'> &
+  Partial<Pick<Alerta, 'valor' | 'direccion' | 'porcentaje' | 'ventanaMinutos'>>;
 
 export interface AlertaRequest {
   simbolo: string;
   tipo: TipoAlerta;
-  valor: number;
+  valor?: number;
+  direccion?: Direccion;
+  porcentaje?: number;
+  ventanaMinutos?: number;
 }

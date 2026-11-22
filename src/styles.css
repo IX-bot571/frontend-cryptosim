@@ -84,6 +84,7 @@ h2 { font-size: 1.05rem; margin: 0 0 var(--esp-4); }
 .btn-enlace { background: none; border: none; color: var(--primario); cursor: pointer; font: inherit; padding: 0 var(--esp-1); }
 .formulario { display: flex; flex-direction: column; gap: var(--esp-3); }
 .formulario label { display: flex; flex-direction: column; gap: var(--esp-1); font-size: 0.85rem; color: var(--texto-sutil); }
+.fila-campos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--esp-3); }
 input, select {
   background: var(--fondo); color: var(--texto); border: 1px solid var(--borde);
   border-radius: var(--radio-sm); padding: var(--esp-2) var(--esp-3); font: inherit;

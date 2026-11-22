@@ -22,7 +22,7 @@
               <td><span class="simbolo">{{ a.simbolo }}</span>
                 @if (nuevas().has(a.id)) { <span class="chip positivo">nueva</span> }
               </td>
-              <td>{{ condicion(a.simbolo, a.tipo, a.valor) }}</td>
+              <td>{{ condicion(a) }}</td>
               <td class="num">US$ {{ a.precioDisparo | precio }}</td>
               <td>{{ a.disparadaEn | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
             </tr>
