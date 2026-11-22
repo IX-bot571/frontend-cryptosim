@@ -1,0 +1,21 @@
+# Dependencias y compilación
+/node_modules
+/dist
+/tmp
+/out-tsc
+/.angular
+/coverage
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Secretos y entorno local
+.env
+application-local.yml
+
+# Varios
+npm-debug.log
+.DS_Store
+Thumbs.db

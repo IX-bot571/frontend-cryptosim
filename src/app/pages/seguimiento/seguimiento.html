@@ -1,0 +1,38 @@
+<section class="pagina">
+  <header class="pagina-cabecera">
+    <h1>Seguimiento</h1>
+    <p class="sutil">Elige qué criptos aparecen en Mercado · {{ seguidos().size }} de {{ catalogo()?.length ?? 0 }} seguidas</p>
+  </header>
+
+  @if (error(); as e) {
+    <div class="aviso error">{{ e }} <button class="btn btn-sm" (click)="cargar()">Reintentar</button></div>
+  }
+
+  @if (catalogo(); as lista) {
+    <ul class="lista tarjeta">
+      @for (c of lista; track c.simbolo) {
+        <li class="fila">
+          <div class="fila-principal">
+            <span class="simbolo">{{ c.simbolo }}</span>
+            <span class="sutil">{{ c.nombre }}</span>
+          </div>
+          @if (precios()[c.simbolo]; as p) {
+            <span class="num">US$ {{ p.precio | precio }}</span>
+            <span class="num" [class.texto-positivo]="p.variacion24hPct >= 0" [class.texto-negativo]="p.variacion24hPct < 0">
+              {{ p.variacion24hPct | porcentaje }}
+            </span>
+          } @else {
+            <span></span><span></span>
+          }
+          <label class="interruptor">
+            <input type="checkbox" [checked]="seguidos().has(c.simbolo)" [disabled]="guardando()"
+                   (change)="alternar(c.simbolo)" [attr.aria-label]="'Seguir ' + c.nombre" />
+            <span class="pista"></span>
+          </label>
+        </li>
+      }
+    </ul>
+  } @else if (!error()) {
+    <p class="sutil">Cargando…</p>
+  }
+</section>

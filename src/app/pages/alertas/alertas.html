@@ -1,0 +1,82 @@
+<section class="pagina">
+  <header class="pagina-cabecera">
+    <h1>Mis alertas</h1>
+    <p class="sutil">Se disparan una sola vez, cuando el precio cruza el valor</p>
+  </header>
+
+  @if (error(); as e) { <div class="aviso error">{{ e }}</div> }
+  @if (exito(); as m) { <div class="aviso ok">{{ m }}</div> }
+
+  <div class="dos-columnas">
+    <form class="tarjeta formulario" [formGroup]="form" (ngSubmit)="crear()">
+      <h2>Nueva alerta</h2>
+      <label>Cripto
+        <select formControlName="simbolo">
+          @for (c of catalogo(); track c.simbolo) {
+            <option [value]="c.simbolo">{{ c.simbolo }} · {{ c.nombre }}</option>
+          }
+        </select>
+      </label>
+      <label>Condición
+        <select formControlName="tipo">
+          <option value="PRECIO_MAYOR_IGUAL">El precio sube a (≥)</option>
+          <option value="PRECIO_MENOR_IGUAL">El precio baja a (≤)</option>
+        </select>
+      </label>
+      <label>Valor (US$)
+        <input type="number" formControlName="valor" step="any" min="0" placeholder="Ej. 100000" />
+      </label>
+      @if (form.controls.valor.touched && form.controls.valor.invalid) {
+        <span class="texto-negativo pequeño">Ingresa un valor mayor que 0.</span>
+      }
+      @if (precioActual(); as p) {
+        <p class="sutil pequeño">
+          Precio actual: US$ {{ p.precio | precio }}
+          <button type="button" class="btn-enlace" (click)="usarPrecioActual()">usar</button>
+        </p>
+      }
+      <p class="resumen">{{ resumen() }}</p>
+      <button class="btn btn-primario" type="submit" [disabled]="enviando()">
+        {{ enviando() ? 'Creando…' : 'Crear alerta' }}
+      </button>
+    </form>
+
+    <div class="tarjeta">
+      <div class="lista-cabecera">
+        <h2>Mis alertas</h2>
+        <div class="segmentos">
+          @for (e of estados; track e) {
+            <button type="button" [class.activo]="filtro() === e" (click)="filtro.set(e)">
+              {{ e === 'TODAS' ? 'Todas' : e }}
+            </button>
+          }
+        </div>
+      </div>
+      @if (alertas() === null) {
+        <p class="sutil">Cargando…</p>
+      } @else if (visibles().length === 0) {
+        <p class="sutil">No hay alertas en esta vista.</p>
+      } @else {
+        <ul class="lista">
+          @for (a of visibles(); track a.id) {
+            <li class="fila">
+              <div class="fila-principal">
+                <strong>{{ condicion(a.simbolo, a.tipo, a.valor) }}</strong>
+                <span class="sutil pequeño">
+                  Creada {{ a.creadaEn | date: 'dd/MM HH:mm' }}
+                  @if (a.estado === 'DISPARADA') { · disparó a US$ {{ a.precioDisparo | precio }} el {{ a.disparadaEn | date: 'dd/MM HH:mm:ss' }} }
+                </span>
+              </div>
+              <span class="estado" [class]="'estado estado-' + a.estado.toLowerCase()">{{ a.estado }}</span>
+              @if (a.estado === 'ACTIVA') {
+                <button class="btn btn-sm btn-peligro" (click)="cancelar(a)">Cancelar</button>
+              } @else {
+                <span></span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</section>

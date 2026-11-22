@@ -1,0 +1,34 @@
+<section class="pagina">
+  <header class="pagina-cabecera">
+    <h1>Notificaciones</h1>
+    <p class="sutil">Alertas disparadas · se actualiza cada 5 s</p>
+  </header>
+
+  @if (error(); as e) { <div class="aviso error">{{ e }}</div> }
+
+  @if (disparadas() === null) {
+    @if (!error()) { <p class="sutil">Cargando…</p> }
+  } @else if (ordenadas().length === 0) {
+    <div class="vacio"><p>Aún no se ha disparado ninguna alerta.</p></div>
+  } @else {
+    <div class="tarjeta tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr><th>Cripto</th><th>Condición</th><th class="num">Precio al disparo</th><th>Hora</th></tr>
+        </thead>
+        <tbody>
+          @for (a of ordenadas(); track a.id) {
+            <tr [class.nueva]="nuevas().has(a.id)">
+              <td><span class="simbolo">{{ a.simbolo }}</span>
+                @if (nuevas().has(a.id)) { <span class="chip positivo">nueva</span> }
+              </td>
+              <td>{{ condicion(a.simbolo, a.tipo, a.valor) }}</td>
+              <td class="num">US$ {{ a.precioDisparo | precio }}</td>
+              <td>{{ a.disparadaEn | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

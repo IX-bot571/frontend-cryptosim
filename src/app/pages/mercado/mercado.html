@@ -1,0 +1,53 @@
+<section class="pagina">
+  <header class="pagina-cabecera">
+    <h1>Mercado</h1>
+    <p class="sutil">Criptos que sigues · se actualiza cada 5 s</p>
+  </header>
+
+  @if (errorPrecios(); as e) { <div class="aviso error">{{ e }}</div> }
+  @if (errorSeguimiento(); as e) {
+    <div class="aviso error">{{ e }} <button class="btn btn-sm" (click)="cargarSeguimiento()">Reintentar</button></div>
+  }
+
+  @if (seguidos() === null && !errorSeguimiento()) {
+    <p class="sutil">Cargando…</p>
+  } @else if (seguidos()?.length === 0) {
+    <div class="vacio">
+      <p>Todavía no sigues ninguna cripto.</p>
+      <a routerLink="/seguimiento" class="btn btn-primario">Elegir criptos</a>
+    </div>
+  } @else {
+    <div class="grilla">
+      @for (t of tarjetas(); track t.simbolo) {
+        <article class="tarjeta cripto">
+          <div class="cripto-cabecera">
+            <div>
+              <span class="simbolo">{{ t.simbolo }}</span>
+              <span class="sutil">{{ t.nombre }}</span>
+            </div>
+            @if (t.precio; as p) {
+              <span class="chip" [class.positivo]="p.variacion24hPct >= 0" [class.negativo]="p.variacion24hPct < 0">
+                {{ p.variacion24hPct | porcentaje }}
+              </span>
+            }
+          </div>
+
+          @if (t.precio; as p) {
+            <div class="precio-grande" [class.flash-sube]="t.flash === 'sube'" [class.flash-baja]="t.flash === 'baja'">
+              <span class="moneda">US$</span>{{ p.precio | precio }}
+            </div>
+            <app-sparkline [puntos]="t.puntos" />
+            <dl class="datos">
+              <div><dt>Máx 24 h</dt><dd>{{ p.maximo24h | precio }}</dd></div>
+              <div><dt>Mín 24 h</dt><dd>{{ p.minimo24h | precio }}</dd></div>
+              <div><dt>Volumen</dt><dd>{{ p.volumen24h | compacto }}</dd></div>
+            </dl>
+            <span class="fuente" [class.simulado]="p.fuente === 'SIMULADO'">{{ p.fuente }}</span>
+          } @else {
+            <p class="sutil">Esperando precio…</p>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>
