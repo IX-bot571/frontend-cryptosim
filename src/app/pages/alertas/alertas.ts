@@ -56,6 +56,18 @@ export class Alertas {
 
   protected readonly precioActual = computed(() => this.precios()[this.valores().simbolo ?? '']);
 
+  /** Resumen: cuántas alertas hay en cada estado y cuántas se dispararon en las últimas 24 h. */
+  protected readonly resumenAlertas = computed(() => {
+    const lista = this.alertas() ?? [];
+    const hace24h = Date.now() - 24 * 3_600_000;
+    return {
+      activas: lista.filter((a) => a.estado === 'ACTIVA').length,
+      disparadas: lista.filter((a) => a.estado === 'DISPARADA').length,
+      canceladas: lista.filter((a) => a.estado === 'CANCELADA').length,
+      ultimas24h: lista.filter((a) => a.disparadaEn && Date.parse(a.disparadaEn) >= hace24h).length,
+    };
+  });
+
   protected readonly visibles = computed(() => {
     const f = this.filtro();
     const lista = this.alertas() ?? [];

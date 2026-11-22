@@ -10,12 +10,12 @@ import { GrupoDetalle, GrupoResumen, TopicDetalle, TopicResumen } from '../../co
 const SERVICIO = 'ms-admin-kafka (8085)';
 const HORA_MS = 3_600_000;
 
-/** "86400000" → "24 h", "604800000" → "7 d", "-1" → "infinita". */
+/** "86400000" → "24 h", "604800000" → "7 d", "-1" → "infinita" (días solo desde 2 d). */
 export function retencionLegible(ms: string | undefined): string {
   if (ms == null) return 'por defecto';
   const n = Number(ms);
   if (n < 0) return 'infinita';
-  if (n % (24 * HORA_MS) === 0) return `${n / (24 * HORA_MS)} d`;
+  if (n >= 48 * HORA_MS && n % (24 * HORA_MS) === 0) return `${n / (24 * HORA_MS)} d`;
   if (n % HORA_MS === 0) return `${n / HORA_MS} h`;
   return `${Math.round(n / 60000)} min`;
 }

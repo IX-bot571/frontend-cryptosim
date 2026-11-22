@@ -7,6 +7,26 @@
   @if (error(); as e) { <div class="aviso error">{{ e }}</div> }
   @if (exito(); as m) { <div class="aviso ok">{{ m }}</div> }
 
+  @if (alertas() !== null) {
+    <div class="resumen-alertas">
+      <div class="tarjeta stat">
+        <span class="estado estado-activa">ACTIVAS</span>
+        <span class="stat-valor">{{ resumenAlertas().activas }}</span>
+        <span class="sutil pequeño">esperando que se cumpla la condición</span>
+      </div>
+      <div class="tarjeta stat">
+        <span class="estado estado-disparada">DISPARADAS</span>
+        <span class="stat-valor">{{ resumenAlertas().disparadas }}</span>
+        <span class="sutil pequeño">{{ resumenAlertas().ultimas24h }} en las últimas 24 h</span>
+      </div>
+      <div class="tarjeta stat">
+        <span class="estado estado-cancelada">CANCELADAS</span>
+        <span class="stat-valor">{{ resumenAlertas().canceladas }}</span>
+        <span class="sutil pequeño">canceladas por ti</span>
+      </div>
+    </div>
+  }
+
   <div class="dos-columnas">
     <form class="tarjeta formulario" [formGroup]="form" (ngSubmit)="crear()">
       <h2>Nueva alerta</h2>

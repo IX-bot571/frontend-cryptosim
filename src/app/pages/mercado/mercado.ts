@@ -7,6 +7,7 @@ import { Precio, PuntoHistorial } from '../../core/models';
 import { PreciosService } from '../../core/precios.service';
 import { SeguimientoService } from '../../core/seguimiento.service';
 import { CompactoPipe, PorcentajePipe, PrecioPipe } from '../../shared/formato.pipes';
+import { Comparador, SerieComparador } from '../../shared/comparador';
 import { Sparkline } from '../../shared/sparkline';
 
 const INTERVALO_MS = 5000;
@@ -15,7 +16,7 @@ const MAX_PUNTOS = 720; // 1 h a 5 s por punto
 /** Tarjetas de las criptos seguidas. Precios cada 5 s; el historial se carga una vez y se extiende en memoria. */
 @Component({
   selector: 'app-mercado',
-  imports: [RouterLink, Sparkline, PrecioPipe, PorcentajePipe, CompactoPipe],
+  imports: [RouterLink, Sparkline, Comparador, PrecioPipe, PorcentajePipe, CompactoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './mercado.html',
 })
@@ -26,6 +27,8 @@ export class Mercado {
 
   protected readonly seguidos = signal<string[] | null>(null);
   protected readonly nombres = signal<Record<string, string>>({});
+  /** Posición de cada símbolo en el catálogo: fija el color de su línea en el comparador. */
+  private readonly indices = signal<Record<string, number>>({});
   protected readonly ultimos = signal<Record<string, Precio>>({});
   protected readonly historial = signal<Record<string, PuntoHistorial[]>>({});
   protected readonly flash = signal<Record<string, 'sube' | 'baja'>>({});
@@ -39,6 +42,15 @@ export class Mercado {
       precio: this.ultimos()[s],
       puntos: this.historial()[s] ?? [],
       flash: this.flash()[s],
+    })),
+  );
+
+  /** Comparador base 100 de las criptos seguidas, con el mismo historial que las mini gráficas. */
+  protected readonly seriesComparador = computed<SerieComparador[]>(() =>
+    (this.seguidos() ?? []).map((s) => ({
+      simbolo: s,
+      indiceCatalogo: this.indices()[s] ?? 0,
+      puntos: this.historial()[s] ?? [],
     })),
   );
 
@@ -66,6 +78,7 @@ export class Mercado {
       .subscribe({
         next: ([seguidos, catalogo]) => {
           this.nombres.set(Object.fromEntries(catalogo.map((c) => [c.simbolo, c.nombre])));
+          this.indices.set(Object.fromEntries(catalogo.map((c, i) => [c.simbolo, i])));
           this.seguidos.set(seguidos);
           this.cargarHistorial(seguidos);
         },

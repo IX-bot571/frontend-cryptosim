@@ -49,5 +49,15 @@
         </article>
       }
     </div>
+
+    @if ((seguidos()?.length ?? 0) >= 2) {
+      <div class="tarjeta">
+        <div class="lista-cabecera">
+          <h2>Comparador base 100</h2>
+          <span class="sutil pequeño">última hora · pasa el cursor para ver cada punto</span>
+        </div>
+        <app-comparador [series]="seriesComparador()" />
+      </div>
+    }
   }
 </section>
